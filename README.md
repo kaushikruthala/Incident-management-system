@@ -108,18 +108,6 @@ OPEN → INVESTIGATING → RESOLVED → CLOSED
 * 🔍 Detailed incident view
 * 📝 RCA submission form
 
----
-
-# 📸 Screenshots / Demo
-
-> Add screenshots here after running the project
-
-Example:
-
-```text
-/docs/dashboard.png
-/docs/incident-detail.png
-```
 
 ---
 
