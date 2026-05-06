@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incident Management System — Architecture Diagram</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    .container { max-width: 1300px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot {
+      width: 12px; height: 12px;
+      background: #22d3ee; border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container {
+      background: rgba(15,23,42,0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    svg { width: 100%; min-width: 1100px; display: block; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: rgba(15,23,42,0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan    { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet  { background: #a78bfa; }
+    .card-dot.amber   { background: #fbbf24; }
+    .card-dot.rose    { background: #fb7185; }
+    .card-dot.orange  { background: #fb923c; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-row">
+      <div class="pulse-dot"></div>
+      <h1>Incident Management System — Architecture</h1>
+    </div>
+    <p class="subtitle">SRE-grade · 10 000 signals/sec · Debounce · Dual Persistence · Workflow Engine</p>
+  </div>
+
+  <!-- Diagram -->
+  <div class="diagram-container">
+    <svg viewBox="0 0 1200 860">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+        </marker>
+        <marker id="arrowhead-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee"/>
+        </marker>
+        <marker id="arrowhead-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#34d399"/>
+        </marker>
+        <marker id="arrowhead-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa"/>
+        </marker>
+        <marker id="arrowhead-amber" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#fbbf24"/>
+        </marker>
+        <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c"/>
+        </marker>
+        <marker id="arrowhead-rose" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#fb7185"/>
+        </marker>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+
+      <!-- Background -->
+      <rect width="100%" height="100%" fill="url(#grid)"/>
+
+      <!-- =====================================================
+           ARROWS (drawn first — render behind boxes)
+           ===================================================== -->
+
+      <!-- Producers → Ingestion API -->
+      <line x1="130" y1="120" x2="218" y2="120" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <text x="174" y="113" fill="#64748b" font-size="8" text-anchor="middle">gRPC/HTTP</text>
+
+      <!-- Ingestion API → Rate Limiter (internal, vertical) -->
+      <line x1="298" y1="148" x2="298" y2="178" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead-rose)"/>
+
+      <!-- Rate Limiter → Ring Buffer -->
+      <line x1="298" y1="220" x2="298" y2="258" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead-cyan)"/>
+      <text x="315" y="242" fill="#64748b" font-size="8">validated</text>
+
+      <!-- Ring Buffer → Redis Debounce -->
+      <line x1="298" y1="310" x2="298" y2="358" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead-cyan)"/>
+      <text x="315" y="338" fill="#64748b" font-size="8">dequeue</text>
+
+      <!-- Redis Debounce → Kafka work-items (first signal only) -->
+      <path d="M 378 395 L 490 395 L 490 308" fill="none" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+      <text x="440" y="388" fill="#fb923c" font-size="8" text-anchor="middle">1st signal → WorkItem</text>
+
+      <!-- Redis Debounce → Kafka raw-signals (always) -->
+      <path d="M 378 415 L 490 415 L 490 388" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+      <text x="440" y="432" fill="#64748b" font-size="8" text-anchor="middle">always → raw signal</text>
+
+      <!-- Kafka work-items → Workflow Engine -->
+      <line x1="620" y1="285" x2="700" y2="285" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+
+      <!-- Kafka raw-signals → MongoDB -->
+      <path d="M 620 370 L 660 370 L 660 620 L 700 620" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+      <!-- Workflow Engine → PostgreSQL -->
+      <line x1="890" y1="285" x2="960" y2="285" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead-emerald)"/>
+      <text x="924" y="277" fill="#64748b" font-size="8" text-anchor="middle">transactional</text>
+
+      <!-- Workflow Engine → Alerting (vertical) -->
+      <line x1="795" y1="328" x2="795" y2="378" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead-rose)"/>
+
+      <!-- Workflow Engine → RCA Validator (vertical) -->
+      <line x1="795" y1="458" x2="795" y2="508" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead-violet)"/>
+
+      <!-- RCA Validator → PostgreSQL -->
+      <path d="M 860 540 L 1000 540 L 1000 318" fill="none" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead-violet)"/>
+      <text x="1010" y="430" fill="#a78bfa" font-size="8">RCA submit</text>
+
+      <!-- PostgreSQL → Redis Hot Cache (write-through) -->
+      <path d="M 1000 268 L 1000 210 L 520 210 L 520 168" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead-amber)"/>
+      <text x="765" y="204" fill="#fbbf24" font-size="8" text-anchor="middle">write-through cache</text>
+
+      <!-- MongoDB → TimescaleDB (aggregator) -->
+      <line x1="960" y1="640" x2="1060" y2="640" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrowhead)"/>
+      <text x="1010" y="633" fill="#64748b" font-size="7" text-anchor="middle">agg. job</text>
+
+      <!-- Redis Hot Cache → React Dashboard -->
+      <path d="M 490 148 L 145 148 L 145 748 L 218 748" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowhead-amber)"/>
+      <text x="152" y="450" fill="#fbbf24" font-size="8">hot-path</text>
+
+      <!-- MongoDB → React Dashboard (signal detail) -->
+      <path d="M 830 640 L 830 780 L 380 780 L 380 768" fill="none" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+      <text x="590" y="794" fill="#64748b" font-size="8" text-anchor="middle">raw signal lookup</text>
+
+      <!-- PostgreSQL → React Dashboard (RCA form) -->
+      <path d="M 960 268 L 940 268 L 940 820 L 510 820 L 510 768" fill="none" stroke="#34d399" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowhead-emerald)"/>
+
+      <!-- =====================================================
+           LAYER 1: SIGNAL PRODUCERS
+           ===================================================== -->
+      <rect x="20" y="50" width="110" height="400" rx="12" fill="rgba(30,41,59,0.3)" stroke="#94a3b8" stroke-width="1" stroke-dasharray="6,4"/>
+      <text x="75" y="68" fill="#94a3b8" font-size="9" font-weight="600" text-anchor="middle">Signal Producers</text>
+
+      <!-- API -->
+      <rect x="30" y="78" width="90" height="48" rx="6" fill="#0f172a"/>
+      <rect x="30" y="78" width="90" height="48" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="75" y="99" fill="white" font-size="10" font-weight="600" text-anchor="middle">REST APIs</text>
+      <text x="75" y="114" fill="#94a3b8" font-size="8" text-anchor="middle">HTTP services</text>
+
+      <!-- MCP Host -->
+      <rect x="30" y="140" width="90" height="48" rx="6" fill="#0f172a"/>
+      <rect x="30" y="140" width="90" height="48" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="75" y="161" fill="white" font-size="10" font-weight="600" text-anchor="middle">MCP Hosts</text>
+      <text x="75" y="176" fill="#94a3b8" font-size="8" text-anchor="middle">AI orchestration</text>
+
+      <!-- Cache -->
+      <rect x="30" y="202" width="90" height="48" rx="6" fill="#0f172a"/>
+      <rect x="30" y="202" width="90" height="48" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="75" y="223" fill="white" font-size="10" font-weight="600" text-anchor="middle">Dist. Caches</text>
+      <text x="75" y="238" fill="#94a3b8" font-size="8" text-anchor="middle">Redis clusters</text>
+
+      <!-- Queue -->
+      <rect x="30" y="264" width="90" height="48" rx="6" fill="#0f172a"/>
+      <rect x="30" y="264" width="90" height="48" rx="6" fill="rgba(251,146,60,0.3)" stroke="#fb923c" stroke-width="1.5"/>
+      <text x="75" y="285" fill="white" font-size="10" font-weight="600" text-anchor="middle">Async Queues</text>
+      <text x="75" y="300" fill="#94a3b8" font-size="8" text-anchor="middle">RabbitMQ/SQS</text>
+
+      <!-- RDBMS -->
+      <rect x="30" y="326" width="90" height="48" rx="6" fill="#0f172a"/>
+      <rect x="30" y="326" width="90" height="48" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="75" y="347" fill="white" font-size="10" font-weight="600" text-anchor="middle">RDBMS</text>
+      <text x="75" y="362" fill="#94a3b8" font-size="8" text-anchor="middle">PostgreSQL</text>
+
+      <!-- NoSQL -->
+      <rect x="30" y="388" width="90" height="48" rx="6" fill="#0f172a"/>
+      <rect x="30" y="388" width="90" height="48" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="75" y="409" fill="white" font-size="10" font-weight="600" text-anchor="middle">NoSQL Stores</text>
+      <text x="75" y="424" fill="#94a3b8" font-size="8" text-anchor="middle">MongoDB</text>
+
+      <!-- =====================================================
+           LAYER 2: INGESTION
+           ===================================================== -->
+
+      <!-- Security Group: Rate Limiter wraps Ingestion API -->
+      <rect x="210" y="72" width="176" height="160" rx="8" fill="transparent" stroke="#fb7185" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="216" y="84" fill="#fb7185" font-size="8">sg-ingestion :443/:9090</text>
+
+      <!-- Ingestion API -->
+      <rect x="218" y="90" width="160" height="58" rx="6" fill="#0f172a"/>
+      <rect x="218" y="90" width="160" height="58" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="298" y="114" fill="white" font-size="11" font-weight="600" text-anchor="middle">Ingestion API</text>
+      <text x="298" y="130" fill="#94a3b8" font-size="8" text-anchor="middle">gRPC :9090 · HTTP :8080</text>
+      <text x="298" y="143" fill="#34d399" font-size="7" text-anchor="middle">Auth · TLS · Compression</text>
+
+      <!-- Rate Limiter -->
+      <rect x="218" y="178" width="160" height="44" rx="6" fill="#0f172a"/>
+      <rect x="218" y="178" width="160" height="44" rx="6" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5"/>
+      <text x="298" y="197" fill="white" font-size="10" font-weight="600" text-anchor="middle">Rate Limiter</text>
+      <text x="298" y="213" fill="#94a3b8" font-size="8" text-anchor="middle">Token bucket · 10k/sec</text>
+
+      <!-- Ring Buffer -->
+      <rect x="218" y="258" width="160" height="52" rx="6" fill="#0f172a"/>
+      <rect x="218" y="258" width="160" height="52" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="298" y="280" fill="white" font-size="11" font-weight="600" text-anchor="middle">Ring Buffer</text>
+      <text x="298" y="296" fill="#94a3b8" font-size="8" text-anchor="middle">Async channel · backpressure</text>
+      <text x="298" y="306" fill="#22d3ee" font-size="7" text-anchor="middle">no crash on DB lag</text>
+
+      <!-- =====================================================
+           LAYER 3: REDIS DEBOUNCE
+           ===================================================== -->
+      <rect x="210" y="358" width="176" height="90" rx="6" fill="#0f172a"/>
+      <rect x="210" y="358" width="176" height="90" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="298" y="382" fill="white" font-size="11" font-weight="600" text-anchor="middle">Redis Debounce</text>
+      <text x="298" y="398" fill="#94a3b8" font-size="8" text-anchor="middle">INCR + EXPIRE · 10 sec window</text>
+      <text x="298" y="412" fill="#94a3b8" font-size="8" text-anchor="middle">per Component ID</text>
+      <text x="298" y="428" fill="#fbbf24" font-size="7" text-anchor="middle">count==1 → emit WorkItem</text>
+
+      <!-- Redis Hot Cache -->
+      <rect x="410" y="108" width="160" height="80" rx="6" fill="#0f172a"/>
+      <rect x="410" y="108" width="160" height="80" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="490" y="132" fill="white" font-size="11" font-weight="600" text-anchor="middle">Redis Hot Cache</text>
+      <text x="490" y="148" fill="#94a3b8" font-size="8" text-anchor="middle">Dashboard state · ZSET feed</text>
+      <text x="490" y="162" fill="#94a3b8" font-size="8" text-anchor="middle">HASH work_items</text>
+      <text x="490" y="176" fill="#fbbf24" font-size="7" text-anchor="middle">write-through · TTL 60s</text>
+
+      <!-- =====================================================
+           LAYER 4: KAFKA MESSAGE BUS
+           ===================================================== -->
+      <!-- Kafka boundary -->
+      <rect x="450" y="248" width="180" height="160" rx="12" fill="rgba(251,146,60,0.05)" stroke="#fb923c" stroke-width="1" stroke-dasharray="6,4"/>
+      <text x="462" y="263" fill="#fb923c" font-size="9" font-weight="600">Kafka Message Bus</text>
+
+      <!-- work-items topic -->
+      <rect x="460" y="268" width="160" height="38" rx="4" fill="rgba(251,146,60,0.3)" stroke="#fb923c" stroke-width="1"/>
+      <text x="540" y="284" fill="white" font-size="10" font-weight="600" text-anchor="middle">work-items</text>
+      <text x="540" y="299" fill="#94a3b8" font-size="8" text-anchor="middle">topic · partitioned by severity</text>
+
+      <!-- raw-signals topic -->
+      <rect x="460" y="348" width="160" height="38" rx="4" fill="rgba(251,146,60,0.3)" stroke="#fb923c" stroke-width="1"/>
+      <text x="540" y="364" fill="white" font-size="10" font-weight="600" text-anchor="middle">raw-signals</text>
+      <text x="540" y="379" fill="#94a3b8" font-size="8" text-anchor="middle">topic · bulk insert sink</text>
+
+      <!-- =====================================================
+           LAYER 5: WORKFLOW ENGINE
+           ===================================================== -->
+      <rect x="688" y="248" width="216" height="310" rx="12" fill="rgba(136,19,55,0.07)" stroke="#fb7185" stroke-width="1" stroke-dasharray="6,4"/>
+      <text x="700" y="263" fill="#fb7185" font-size="9" font-weight="600">Workflow Engine</text>
+
+      <!-- State Machine -->
+      <rect x="698" y="268" width="196" height="60" rx="6" fill="#0f172a"/>
+      <rect x="698" y="268" width="196" height="60" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="796" y="289" fill="white" font-size="10" font-weight="600" text-anchor="middle">State Machine</text>
+      <text x="796" y="304" fill="#94a3b8" font-size="8" text-anchor="middle">OPEN → INVESTIGATING</text>
+      <text x="796" y="317" fill="#94a3b8" font-size="8" text-anchor="middle">→ RESOLVED → CLOSED</text>
+
+      <!-- Alerting Strategy -->
+      <rect x="698" y="378" width="196" height="60" rx="6" fill="#0f172a"/>
+      <rect x="698" y="378" width="196" height="60" rx="6" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1.5"/>
+      <text x="796" y="399" fill="white" font-size="10" font-weight="600" text-anchor="middle">Alerting Strategy</text>
+      <text x="796" y="414" fill="#94a3b8" font-size="8" text-anchor="middle">P0 RDBMS · P2 Cache</text>
+      <text x="796" y="427" fill="#fb7185" font-size="7" text-anchor="middle">Strategy Pattern · PagerDuty/Slack</text>
+
+      <!-- RCA Validator -->
+      <rect x="698" y="508" width="196" height="40" rx="6" fill="#0f172a"/>
+      <rect x="698" y="508" width="196" height="40" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="796" y="526" fill="white" font-size="10" font-weight="600" text-anchor="middle">RCA Validator</text>
+      <text x="796" y="540" fill="#94a3b8" font-size="8" text-anchor="middle">reject CLOSED if RCA missing</text>
+
+      <!-- MTTR Calculator -->
+      <rect x="698" y="560" width="196" height="38" rx="6" fill="#0f172a"/>
+      <rect x="698" y="560" width="196" height="38" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="796" y="578" fill="white" font-size="10" font-weight="600" text-anchor="middle">MTTR Calculator</text>
+      <text x="796" y="592" fill="#94a3b8" font-size="8" text-anchor="middle">first_signal_at → closed_at</text>
+
+      <!-- =====================================================
+           LAYER 6: PERSISTENCE
+           ===================================================== -->
+
+      <!-- PostgreSQL -->
+      <rect x="950" y="248" width="160" height="90" rx="6" fill="#0f172a"/>
+      <rect x="950" y="248" width="160" height="90" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="1030" y="275" fill="white" font-size="11" font-weight="600" text-anchor="middle">PostgreSQL</text>
+      <text x="1030" y="291" fill="#94a3b8" font-size="8" text-anchor="middle">Source of Truth</text>
+      <text x="1030" y="305" fill="#94a3b8" font-size="8" text-anchor="middle">Work Items · RCA Records</text>
+      <text x="1030" y="318" fill="#a78bfa" font-size="7" text-anchor="middle">ACID · State transitions</text>
+      <text x="1030" y="330" fill="#a78bfa" font-size="7" text-anchor="middle">GENERATED mttr_seconds</text>
+
+      <!-- MongoDB -->
+      <rect x="820" y="600" width="160" height="80" rx="6" fill="#0f172a"/>
+      <rect x="820" y="600" width="160" height="80" rx="6" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+      <text x="900" y="625" fill="white" font-size="11" font-weight="600" text-anchor="middle">MongoDB</text>
+      <text x="900" y="641" fill="#94a3b8" font-size="8" text-anchor="middle">Data Lake · raw_signals</text>
+      <text x="900" y="655" fill="#94a3b8" font-size="8" text-anchor="middle">signal_batches · TTL 90d</text>
+      <text x="900" y="669" fill="#a78bfa" font-size="7" text-anchor="middle">bulk writes · 500/batch</text>
+
+      <!-- TimescaleDB -->
+      <rect x="1050" y="600" width="130" height="70" rx="6" fill="#0f172a"/>
+      <rect x="1050" y="600" width="130" height="70" rx="6" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+      <text x="1115" y="625" fill="white" font-size="10" font-weight="600" text-anchor="middle">TimescaleDB</text>
+      <text x="1115" y="641" fill="#94a3b8" font-size="8" text-anchor="middle">Aggregations</text>
+      <text x="1115" y="655" fill="#94a3b8" font-size="8" text-anchor="middle">signals/sec · p95 lat</text>
+
+      <!-- /health + Observability -->
+      <rect x="950" y="380" width="160" height="70" rx="6" fill="#0f172a"/>
+      <rect x="950" y="380" width="160" height="70" rx="6" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="1030" y="402" fill="white" font-size="10" font-weight="600" text-anchor="middle">Observability</text>
+      <text x="1030" y="418" fill="#94a3b8" font-size="8" text-anchor="middle">/health endpoint</text>
+      <text x="1030" y="432" fill="#94a3b8" font-size="8" text-anchor="middle">throughput every 5s</text>
+      <text x="1030" y="445" fill="#34d399" font-size="7" text-anchor="middle">Prometheus · console log</text>
+
+      <!-- Arrow: Alerting → Observability -->
+      <line x1="950" y1="415" x2="896" y2="415" stroke="#fb7185" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowhead-rose)"/>
+
+      <!-- =====================================================
+           REACT DASHBOARD
+           ===================================================== -->
+      <rect x="210" y="700" width="700" height="120" rx="12" fill="rgba(8,51,68,0.2)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="6,4"/>
+      <text x="222" y="716" fill="#22d3ee" font-size="9" font-weight="600">React Dashboard (SPA)</text>
+
+      <!-- Live Feed -->
+      <rect x="220" y="722" width="200" height="88" rx="6" fill="#0f172a"/>
+      <rect x="220" y="722" width="200" height="88" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="320" y="745" fill="white" font-size="10" font-weight="600" text-anchor="middle">Live Feed</text>
+      <text x="320" y="761" fill="#94a3b8" font-size="8" text-anchor="middle">Active incidents</text>
+      <text x="320" y="775" fill="#94a3b8" font-size="8" text-anchor="middle">Sorted by severity</text>
+      <text x="320" y="789" fill="#22d3ee" font-size="7" text-anchor="middle">WebSocket / SSE · Redis ZSET</text>
+      <text x="320" y="802" fill="#22d3ee" font-size="7" text-anchor="middle">hot-path — no Postgres hit</text>
+
+      <!-- Incident Detail -->
+      <rect x="435" y="722" width="200" height="88" rx="6" fill="#0f172a"/>
+      <rect x="435" y="722" width="200" height="88" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="535" y="745" fill="white" font-size="10" font-weight="600" text-anchor="middle">Incident Detail</text>
+      <text x="535" y="761" fill="#94a3b8" font-size="8" text-anchor="middle">Raw signals from MongoDB</text>
+      <text x="535" y="775" fill="#94a3b8" font-size="8" text-anchor="middle">Status timeline</text>
+      <text x="535" y="789" fill="#22d3ee" font-size="7" text-anchor="middle">signal_batches lookup</text>
+      <text x="535" y="802" fill="#22d3ee" font-size="7" text-anchor="middle">work_item_id join</text>
+
+      <!-- RCA Form -->
+      <rect x="650" y="722" width="248" height="88" rx="6" fill="#0f172a"/>
+      <rect x="650" y="722" width="248" height="88" rx="6" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="774" y="745" fill="white" font-size="10" font-weight="600" text-anchor="middle">RCA Form</text>
+      <text x="774" y="761" fill="#94a3b8" font-size="8" text-anchor="middle">Start/End datetime · Category</text>
+      <text x="774" y="775" fill="#94a3b8" font-size="8" text-anchor="middle">Fix Applied · Prevention Steps</text>
+      <text x="774" y="789" fill="#a78bfa" font-size="7" text-anchor="middle">POST → RCA Validator → CLOSED</text>
+      <text x="774" y="802" fill="#a78bfa" font-size="7" text-anchor="middle">MTTR auto-calculated on submit</text>
+
+      <!-- =====================================================
+           LEGEND
+           ===================================================== -->
+      <text x="20" y="470" fill="white" font-size="9" font-weight="600">Legend</text>
+
+      <rect x="20" y="480" width="12" height="8" rx="2" fill="rgba(8,51,68,0.4)" stroke="#22d3ee" stroke-width="1"/>
+      <text x="36" y="487" fill="#94a3b8" font-size="8">Frontend / Buffer</text>
+
+      <rect x="20" y="496" width="12" height="8" rx="2" fill="rgba(6,78,59,0.4)" stroke="#34d399" stroke-width="1"/>
+      <text x="36" y="503" fill="#94a3b8" font-size="8">Backend / Engine</text>
+
+      <rect x="20" y="512" width="12" height="8" rx="2" fill="rgba(76,29,149,0.4)" stroke="#a78bfa" stroke-width="1"/>
+      <text x="36" y="519" fill="#94a3b8" font-size="8">Database</text>
+
+      <rect x="20" y="528" width="12" height="8" rx="2" fill="rgba(120,53,15,0.3)" stroke="#fbbf24" stroke-width="1"/>
+      <text x="36" y="535" fill="#94a3b8" font-size="8">Cache / Cloud</text>
+
+      <rect x="20" y="544" width="12" height="8" rx="2" fill="rgba(136,19,55,0.4)" stroke="#fb7185" stroke-width="1"/>
+      <text x="36" y="551" fill="#94a3b8" font-size="8">Security / Alert</text>
+
+      <rect x="20" y="560" width="12" height="8" rx="2" fill="rgba(251,146,60,0.3)" stroke="#fb923c" stroke-width="1"/>
+      <text x="36" y="567" fill="#94a3b8" font-size="8">Message Bus</text>
+
+      <line x1="20" y1="580" x2="32" y2="580" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="36" y="583" fill="#94a3b8" font-size="8">Auth / Security flow</text>
+
+      <line x1="20" y1="595" x2="32" y2="595" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="36" y="598" fill="#94a3b8" font-size="8">Cache write-through</text>
+
+    </svg>
+  </div>
+
+  <!-- Info Cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot orange"></div>
+        <h3>Ingestion &amp; Backpressure</h3>
+      </div>
+      <ul>
+        <li>• gRPC + HTTP dual protocol ingestion</li>
+        <li>• Token-bucket rate limiter (10 000/sec cap)</li>
+        <li>• Async ring buffer absorbs DB lag bursts</li>
+        <li>• Redis INCR debounce: 1 WorkItem per 10 s window</li>
+        <li>• 100 signals → 1 WorkItem, all linked via batch_id</li>
+        <li>• /health + 5-sec throughput console metrics</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot violet"></div>
+        <h3>Persistence Design</h3>
+      </div>
+      <ul>
+        <li>• PostgreSQL: ACID WorkItems, RCA, state transitions</li>
+        <li>• GENERATED ALWAYS mttr_seconds column</li>
+        <li>• MongoDB: raw_signals + signal_batches, TTL 90d</li>
+        <li>• Redis ZSET: live dashboard feed, no Postgres hit</li>
+        <li>• TimescaleDB: signals/sec, p95 latency aggregations</li>
+        <li>• Immutable transition log (work_item_transitions)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot rose"></div>
+        <h3>Workflow &amp; SRE Patterns</h3>
+      </div>
+      <ul>
+        <li>• State Pattern: OPEN → INVESTIGATING → RESOLVED → CLOSED</li>
+        <li>• Strategy Pattern: P0/P1/P2 alerting per component type</li>
+        <li>• RCA mandatory: CLOSED blocked if RCA incomplete</li>
+        <li>• MTTR auto-calc: first_signal_at → closed_at delta</li>
+        <li>• Retry logic with exponential backoff on DB writes</li>
+        <li>• Zero-downtime: ring buffer decouples all layers</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <p class="footer">
+    Incident Management System · SRE Architecture · 10 000 signals/sec · Redis · Kafka · PostgreSQL · MongoDB
+  </p>
+</div>
+</body>
+</html>
